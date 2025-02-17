@@ -569,6 +569,7 @@ class BaseTrainer:
         self.data = data
         return data["train"], data.get("val") or data.get("test")
 
+
     def setup_model(self):
         """Load/create/download model for any task."""
         if isinstance(self.model, torch.nn.Module):  # if model is loaded beforehand. No setup needed

@@ -298,6 +298,42 @@ def find_dataset_yaml(path: Path) -> Path:
     return files[0]
 
 
+import os
+import shutil
+import xml.etree.ElementTree as ET
+
+# Define class names manually or read from YAML
+CLASS_NAMES = ["hole"]  # Modify this list
+
+def convert_xml_to_yolo(xml_file, image_width, image_height):
+    tree = ET.parse(xml_file)
+    root = tree.getroot()
+    yolo_annotations = []
+
+    for obj in root.findall("object"):
+        class_name = obj.find("name").text
+        if class_name not in CLASS_NAMES:
+            continue  # Skip unknown classes
+
+        class_id = CLASS_NAMES.index(class_name)
+        bbox = obj.find("bndbox")
+
+        xmin = int(bbox.find("xmin").text)
+        ymin = int(bbox.find("ymin").text)
+        xmax = int(bbox.find("xmax").text)
+        ymax = int(bbox.find("ymax").text)
+
+        # Normalize bounding box coordinates
+        x_center = (xmin + xmax) / (2.0 * image_width)
+        y_center = (ymin + ymax) / (2.0 * image_height)
+        width = (xmax - xmin) / image_width
+        height = (ymax - ymin) / image_height
+
+        yolo_annotations.append(f"{class_id} {x_center:.6f} {y_center:.6f} {width:.6f} {height:.6f}")
+
+    return yolo_annotations
+
+
 def check_det_dataset(dataset, autodownload=True):
     """
     Download, verify, and/or unzip a dataset if not found locally.
@@ -314,7 +350,6 @@ def check_det_dataset(dataset, autodownload=True):
         (dict): Parsed dataset information and paths.
     """
     file = check_file(dataset)
-
     # Download (optional)
     extract_dir = ""
     if zipfile.is_zipfile(file) or is_tarfile(file):
@@ -324,14 +359,26 @@ def check_det_dataset(dataset, autodownload=True):
 
     # Read YAML
     data = yaml_load(file, append_filename=True)  # dictionary
+    print(data)
+
+    # Extract path and directories
+    train_data_dir = os.path.join(data["path"], "train")
+    images_dir_path = os.path.join(train_data_dir, "images")  # train/images
+
+    if not os.path.exists(images_dir_path):   # train/images
+        os.makedirs(images_dir_path, exist_ok=True)   # create train/images
+        img_files = [f for f in os.listdir(train_data_dir) if f.endswith((".jpg", ".png", ".jpeg"))]
+        if img_files:
+            for img in img_files:
+                shutil.move(os.path.join(train_data_dir, img), os.path.join(images_dir_path, img))
 
     # Checks
     for k in "train", "val":
         if k not in data:
             if k != "val" or "validation" not in data:
-                raise SyntaxError(
-                    emojis(f"{dataset} '{k}:' key missing ❌.\n'train' and 'val' are required in all data YAMLs.")
-                )
+                    raise SyntaxError(
+                        emojis(f"{dataset} '{k}:' key missing ❌.\n'train' and 'val' are required in all data YAMLs.")
+                    )
             LOGGER.info("WARNING ⚠️ renaming data YAML 'validation' key to 'val' to match YOLO format.")
             data["val"] = data.pop("validation")  # replace 'validation' key with 'val' key
     if "names" not in data and "nc" not in data:
