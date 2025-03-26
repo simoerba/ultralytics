@@ -106,6 +106,7 @@ class DWConv(Conv):
         """Initialize Depth-wise convolution with given parameters."""
         super().__init__(c1, c2, k, s, g=math.gcd(c1, c2), d=d, act=act)
 
+#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! Look more into this ConvTranspose per capire se ti serve la dilation !!!!!!!!!!!!!!!!!!!!!!!!
 
 class DWConvTranspose2d(nn.ConvTranspose2d):
     """Depth-wise transpose convolution."""
@@ -135,6 +136,7 @@ class ConvTranspose(nn.Module):
         """Applies activation and convolution transpose operation to input."""
         return self.act(self.conv_transpose(x))
 
+#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 class Focus(nn.Module):
     """Focus wh information into c-space."""
@@ -170,7 +172,7 @@ class GhostConv(nn.Module):
         y = self.cv1(x)
         return torch.cat((y, self.cv2(y)), 1)
 
-
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 class RepConv(nn.Module):
     """
     RepConv is a basic rep-style block, including training and deploy status.
@@ -181,7 +183,7 @@ class RepConv(nn.Module):
 
     default_act = nn.SiLU()  # default activation
 
-    def __init__(self, c1, c2, k=3, s=1, p=1, g=1, d=1, act=True, bn=False, deploy=False):
+    def __init__(self, c1, c2, k=3, s=1, p=1, g=1, d=2, act=True, bn=False, deploy=False):
         """Initializes Light Convolution layer with inputs, outputs & optional activation function."""
         super().__init__()
         assert k == 3 and p == 1
