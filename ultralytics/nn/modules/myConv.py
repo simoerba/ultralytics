@@ -25,7 +25,7 @@ __all__ = (
 )
 
 
-def autopad(k, p=None, d=1):  # kernel, padding, dilation
+def autopad(k, p=None, d=2):  # kernel, padding, dilation
     """Pad to 'same' shape outputs."""
     if d > 1:
         k = d * (k - 1) + 1 if isinstance(k, int) else [d * (x - 1) + 1 for x in k]  # actual kernel-size
@@ -39,7 +39,7 @@ class Conv(nn.Module):
 
     default_act = nn.SiLU()  # default activation
 
-    def __init__(self, c1, c2, k=1, s=1, p=None, g=1, d=1, act=True):
+    def __init__(self, c1, c2, k=1, s=1, p=None, g=1, d=2, act=True):
         """Initialize Conv layer with given arguments including activation."""
         super().__init__()
         self.conv = nn.Conv2d(c1, c2, k, s, autopad(k, p, d), groups=g, dilation=d, bias=False)
@@ -58,7 +58,7 @@ class Conv(nn.Module):
 class Conv2(Conv):
     """Simplified RepConv module with Conv fusing."""
 
-    def __init__(self, c1, c2, k=3, s=1, p=None, g=1, d=1, act=True):
+    def __init__(self, c1, c2, k=3, s=1, p=None, g=1, d=2, act=True):
         """Initialize Conv layer with given arguments including activation."""
         super().__init__(c1, c2, k, s, p, g=g, d=d, act=act)
         self.cv2 = nn.Conv2d(c1, c2, 1, s, autopad(1, p, d), groups=g, dilation=d, bias=False)  # add 1x1 conv
@@ -102,7 +102,7 @@ class LightConv(nn.Module):
 class DWConv(Conv):
     """Depth-wise convolution."""
 
-    def __init__(self, c1, c2, k=1, s=1, d=1, act=True):  # ch_in, ch_out, kernel, stride, dilation, activation
+    def __init__(self, c1, c2, k=1, s=1, d=2, act=True):  # ch_in, ch_out, kernel, stride, dilation, activation
         """Initialize Depth-wise convolution with given parameters."""
         super().__init__(c1, c2, k, s, g=math.gcd(c1, c2), d=d, act=act)
 
